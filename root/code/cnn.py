@@ -7,13 +7,14 @@ from keras.models import Sequential
 from keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, Dropout
 import cv2
 import numpy as np
+from tensorflow_core.python.keras.models import load_model
 
 
 class CNN:
     CATEGORIES = ['circle', 'square', 'star', 'triangle']
-    IMG_SIZE = 25
 
-    def __init__(self):
+    def __init__(self, img_size):
+        self.IMG_SIZE = img_size
         self.X = []
         self.y = []
         self.X_train = ''
@@ -25,7 +26,7 @@ class CNN:
         self.training_data = []
 
         # evaluation
-        self.model_execution(.2, 64, 32, 3, 2, 10)
+        # self.model_execution(.2, 64, 32, 3, 2, 1)
 
     # noinspection PyBroadException
     def create_training_data(self):
@@ -110,28 +111,6 @@ class CNN:
                        validation_data=(self.X_test, self.y_test),
                        epochs=epochs)
 
-    def check(self, img):
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        dim = (self.IMG_SIZE, self.IMG_SIZE)
-        # resize image
-        resized = cv2.resize(gray, dim, interpolation=cv2.INTER_AREA)
-        # resized = cv2.bitwise_not(resized)
-        ret, resized = cv2.threshold(resized, 20, 255, cv2.THRESH_BINARY)
-        a = resized
-        a = np.expand_dims(a, axis=(0, 3))
-        arr = self.model.predict(a)
-        arr = arr.tolist()[0]
-        if arr.index(max(arr)) == 0:
-            return 'circle'
-        elif arr.index(max(arr)) == 1:
-            return 'square'
-        elif arr.index(max(arr)) == 2:
-            return 'star'
-        elif arr.index(max(arr)) == 3:
-            return 'triangle'
-        else:
-            return 'Error!'
-
     def model_execution(self, test_size,first_layer, second_layer, k_size, p_size, epochs):
         self.create_training_data()
         self.shuffle()
@@ -145,4 +124,30 @@ class CNN:
         self.fit_model(epochs)
 
     def model_save(self):
-        self.model.save_weights("model.h5")
+        self.model.save('my_model')
+
+    def load_model(self):
+        self.model = load_model('my_model')
+
+
+def check(img, size, model):
+    dim = (size, size)
+    # resize image
+    resized = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+    # resized = cv2.bitwise_not(resized)
+    ret, resized = cv2.threshold(resized, 20, 255, cv2.THRESH_BINARY)
+    a = resized
+    a = np.expand_dims(a, axis=(0, 3))
+    arr = model.model.predict(a)
+    arr = arr.tolist()[0]
+    print(arr)
+    if arr.index(max(arr)) == 0:
+        return 'circle'
+    elif arr.index(max(arr)) == 1:
+        return 'square'
+    elif arr.index(max(arr)) == 2:
+        return 'star'
+    elif arr.index(max(arr)) == 3:
+        return 'triangle'
+    else:
+        return 'Error!'
